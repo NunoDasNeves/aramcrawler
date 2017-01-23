@@ -3,6 +3,7 @@
 import sys, logging, os, time
 import pymysql.cursors
 import daemon
+import threading, queue
 
 VERSION = "0.1"
 # 500 requests every 10 minutes = 1.2 requests per second. Plus an extra 0.01 just in case
@@ -87,6 +88,9 @@ def startCrawler():
         sys.stderr.write("No api-keys found!")
         exit(1)
 
+    # create our list of api tasks to do
+    taskList = queue.Queue()
+
     if task == "crawl-games-daemon":
         # transform this process into a daemon
         # NOTE: we will use the current directory as the working directory (for logging etc)
@@ -103,18 +107,28 @@ def startCrawler():
         logging.info("Getting static champions and items data")
         # TODO: add tasks here
 
-    # start main loop
-    while True:
-        startTime = time.time()
-        # Here is where we do things
-        # --------------------------
-        logging.info("Making one query")
-        time.sleep(1.2)
-        # --------------------------
-        waitPeriod = API_WAIT-(time.time()-startTime)
-        if waitPeriod > 0:
-            logging.info("Waiting {0}".format(waitPeriod))
-            time.sleep(waitPeriod)
+    # for each api key, start a new thread
+    for key in creds["api-keys"]:
+        t = ApiThread(key)
+        t.start()
+
+class ApiThread(threading.Thread):
+    def __init__(self, apiKey):
+        threading.Thread.__init__(self)
+        self.apiKey = apiKey
+    def run(self):
+        while True:
+            startTime = time.time()
+            # Here is where we do things
+            # --------------------------
+            logging.info("Making one query")
+            time.sleep(0.8)
+            # --------------------------
+            waitPeriod = API_WAIT-(time.time()-startTime)
+            if waitPeriod > 0:
+                logging.info("Waiting {0}".format(waitPeriod))
+                time.sleep(waitPeriod)
+
 
 if __name__ == "__main__":
     startCrawler();
