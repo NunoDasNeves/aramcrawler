@@ -110,12 +110,14 @@ def startCrawler():
     # for each api key, start a new thread
     for key in creds["api-keys"]:
         t = ApiThread(key)
+        t.daemon = False
         t.start()
 
 class ApiThread(threading.Thread):
-    def __init__(self, apiKey):
+    def __init__(self, apiKey, taskList):
         threading.Thread.__init__(self)
         self.apiKey = apiKey
+        self.taskList = taskList
     def run(self):
         while True:
             startTime = time.time()
