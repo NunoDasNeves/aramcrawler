@@ -9,7 +9,7 @@ import config
 def startCrawler():
     #parse arguments, get options
     task = None
-    makeTables = False
+    daemon = False
     logFile = "/tmp/aramcrawler.log"
     for arg in sys.argv[1:]:
         if ("=" in arg):
@@ -18,12 +18,12 @@ def startCrawler():
                 logFile = arg[1]
             elif arg[0] == "task":
                 task = arg[1]
-        elif arg == "--example-creds":
-            task = "example-creds"
+        elif arg == "--daemon":
+            daemon = True
 
     # print a handy usage message if the user didn't enter enough options
-    if task is None or task not in ["get-static","crawl-games-daemon","setup-tables"]:
-        sys.stderr.write ("Usage: {0} [task=get-static|crawl-games-daemon|setup-tables logfile=[FILE]]\n".format(sys.argv[0]))
+    if task is None or task not in ["get-static","crawl-games","setup-tables"]:
+        sys.stderr.write ("Usage: {0} task=get-static|crawl-games|setup-tables [logfile=[FILE]] [--daemon]\n".format(sys.argv[0]))
         exit(1)
 
     if task == "setup-tables":
@@ -35,19 +35,24 @@ def startCrawler():
             print ("Done")
         exit(0)
 
-    if task == "crawl-games-daemon":
+    if daemon == True:
         print ("Logging to {0}".format(logFile))
-
         # transform this process into a daemon
-        # NOTE: we will use the current directory as the working directory (for logging etc)
+        # NOTE: we will use the current directory as the working directory
         context = daemon.DaemonContext(working_directory=os.getcwd())
         context.open()
-
         # initialize logging to file
-        logging.basicConfig(filename=logFile, format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
+        logging.basicConfig(
+                filename=logFile, 
+                format="%(asctime)s %(levelname)s %(message)s", 
+                level=logging.INFO
+            )
         logging.info("Starting ARAM crawler v{0}".format(VERSION))
-    elif task == "get-static":
-        logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
+    else:
+        logging.basicConfig(
+                format="%(asctime)s %(levelname)s %(message)s", 
+                level=logging.INFO
+            )
         logging.info("Getting static champions and items data")
 
     threads.startThreads(config.apiKeys, task)

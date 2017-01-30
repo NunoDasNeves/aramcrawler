@@ -12,6 +12,15 @@ tasks = queue.Queue
 killFlag = False
 
 def startThreads(keys, job):
+    # put tasks in the queue
+    if job == "crawl-games":
+        tasks.put("game-v1.3")
+        tasks.put("game-v1.3")
+    elif job == "get-static":
+
+        pass
+    else:
+        return
 
     threads = []
     # for each api key, start a new thread
