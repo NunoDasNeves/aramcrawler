@@ -1,9 +1,11 @@
-#!/usr/bin/python3
-
 import logging, time
 import threading, queue
 from crawler import database
 
+# TODO: implement a cache
+# from crawler import cache
+
+VERSION = 0.1
 # 500 requests every 10 mins = 1 request per 1.2 seconds
 API_WAIT = 1.21
 # our queue of tasks to do
@@ -14,10 +16,11 @@ killFlag = False
 def startThreads(keys, job):
     # put tasks in the queue
     if job == "crawl-games":
+        logging.info("Starting ARAM crawler v{0}".format(VERSION))
         tasks.put("game-v1.3")
         tasks.put("game-v1.3")
     elif job == "get-static":
-
+        logging.info("Getting static champions and items data")
         pass
     else:
         return

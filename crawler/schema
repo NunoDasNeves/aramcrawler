@@ -1,5 +1,0 @@
-DROP TABLE IF EXISTS games, summoners, champions, items, masteries, runes, summonerspells;
-
-CREATE TABLE games
-
-

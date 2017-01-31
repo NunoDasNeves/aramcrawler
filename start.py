@@ -47,13 +47,11 @@ def startCrawler():
                 format="%(asctime)s %(levelname)s %(message)s", 
                 level=logging.INFO
             )
-        logging.info("Starting ARAM crawler v{0}".format(VERSION))
     else:
         logging.basicConfig(
                 format="%(asctime)s %(levelname)s %(message)s", 
                 level=logging.INFO
             )
-        logging.info("Getting static champions and items data")
 
     threads.startThreads(config.apiKeys, task)
 
