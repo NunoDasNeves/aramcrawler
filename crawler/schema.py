@@ -1,56 +1,36 @@
-from crawler import database
+def firstField(d,f):
+    return d[f[0]]
 
-# tasks are the top-level of this program schema
-# each api query type 
-
-
-# static data tasks
-def getStaticData():
-    # what api calls do we need
-    getChampData()
-    getItemData()
-    # what tables do we need
-    # - Champions
-    # - Items
-
-
-# crawling tasks
-# start with 1 getGames task per api key
-def getGames(summonerId): # returns 0-10 ARAMs, 5-40 summoners
-    # get games, put a getMatchDetail in the queue for each ARAM we got
-    # if no arams, put another getGames in the queue for each api key
-    
-    # - MatchDetails
-    # - PlayerStats
-    # - Summoners
-def getMatchDetail(matchId) # gets details of 1 ARAM
-    # get match details
-    # if queue is empty, put a getGames in the queue for each api key
-    # - MatchDetails
-    # - PlayerStats
-def setupTables():
-
-MatchDetails:
-matchId PRIMARY KEY BIGINT UNSIGNED
-mapId TINYINT UNSIGNED
-matchCreation BIGINT UNSIGNED
-matchDuration INT UNSIGNED
-matchMode VARCHAR(24) ARAM
-matchType VARCHAR(24) MATCHED_GAME
-matchVersion VARCHAR(24)
-platformId VARCHAR(8)
-queueType VARCHAR(24) ARAM_5x5
-region VARCHAR(4)
-season VARCHAR(24)
-firstBlood TINYINT UNSIGNED
-firstInhibitor TINYINT UNSIGNED
-firstTower TINYINT UNSIGNED
-team1inhibitorKills INT UNSIGNED
-team2inhibitorKills INT UNSIGNED
-team1towerKills TINYINT UNSIGNED
-team2towerKills TINYINT UNSIGNED
-winner TINYINT UNSIGNED
-
+dataMap = {
+    'MatchDetails':
+    {
+        'matchId':
+        {
+            'type':'PRIMARY KEY BIGINT UNSIGNED'
+            'game-v1.3':(firstField,["gameId"])
+            'match-v2.2':(firstField,["matchId"])
+        },
+            mapId TINYINT UNSIGNED
+            matchCreation BIGINT UNSIGNED
+            matchDuration INT UNSIGNED
+            matchMode VARCHAR(24) ARAM
+            matchType VARCHAR(24) MATCHED_GAME
+            matchVersion VARCHAR(24)
+            platformId VARCHAR(8)
+            queueType VARCHAR(24) ARAM_5x5
+            region VARCHAR(4)
+            season VARCHAR(24)
+            firstBlood TINYINT UNSIGNED
+            firstInhibitor TINYINT UNSIGNED
+            firstTower TINYINT UNSIGNED
+            team1inhibitorKills INT UNSIGNED
+            team2inhibitorKills INT UNSIGNED
+            team1towerKills TINYINT UNSIGNED
+            team2towerKills TINYINT UNSIGNED
+            winner TINYINT UNSIGNED
+    },
+'test':
+'
 Participants
 id PRIMARY KEY BIGINT UNSIGNED
 matchId KEY BIGINT UNSIGNED
@@ -123,5 +103,5 @@ t..
 
 Items
 .
-
-
+'
+}
