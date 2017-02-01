@@ -1,33 +1,49 @@
-def firstField(d,f):
-    return d[f[0]]
+# recursive function for reading nested dictionary objects via an array
+# eg with d = {'a':{'b':1}}, d['a']['b'] can be read with rDBA(d,[a,b])
+def readDictByArray(d,a):
+    if len(a) == 0:
+        return None
+    if len(a) == 1:
+        return d[a[0]]
+    return readDictByArray(d[a[0]], a[1:])
 
 dataMap = {
     'MatchDetails':
     {
         'matchId':
         {
-            'type':'PRIMARY KEY BIGINT UNSIGNED'
-            'game-v1.3':(firstField,["gameId"])
+            'type':'PRIMARY KEY BIGINT UNSIGNED',
+            'game-v1.3':(readDictByArray,["gameId"]),
+            'match-v2.2':(readDictByArray,["matchId"])
+        },'
+
+        mapId TINYINT UNSIGNED
+        matchCreation BIGINT UNSIGNED
+        matchDuration INT UNSIGNED
+        matchMode VARCHAR(24) ARAM
+        matchType VARCHAR(24) MATCHED_GAME
+        matchVersion VARCHAR(24)
+        platformId VARCHAR(8)
+        queueType VARCHAR(24) ARAM_5x5
+        region VARCHAR(4)
+        season VARCHAR(24)
+        firstBlood TINYINT UNSIGNED
+        firstInhibitor TINYINT UNSIGNED
+        firstTower TINYINT UNSIGNED
+        team1inhibitorKills INT UNSIGNED
+        team2inhibitorKills INT UNSIGNED
+        team1towerKills TINYINT UNSIGNED
+        team2towerKills TINYINT UNSIGNED
+        ',
+
+        'winner':
+        {
+            'type':'TINYINT UNSIGNED',
+            'type':'PRIMARY KEY BIGINT UNSIGNED',
+            'game-v1.3':(lambda d,a:),
             'match-v2.2':(firstField,["matchId"])
-        },
-            mapId TINYINT UNSIGNED
-            matchCreation BIGINT UNSIGNED
-            matchDuration INT UNSIGNED
-            matchMode VARCHAR(24) ARAM
-            matchType VARCHAR(24) MATCHED_GAME
-            matchVersion VARCHAR(24)
-            platformId VARCHAR(8)
-            queueType VARCHAR(24) ARAM_5x5
-            region VARCHAR(4)
-            season VARCHAR(24)
-            firstBlood TINYINT UNSIGNED
-            firstInhibitor TINYINT UNSIGNED
-            firstTower TINYINT UNSIGNED
-            team1inhibitorKills INT UNSIGNED
-            team2inhibitorKills INT UNSIGNED
-            team1towerKills TINYINT UNSIGNED
-            team2towerKills TINYINT UNSIGNED
-            winner TINYINT UNSIGNED
+
+        }
     },
 'test':
 '
