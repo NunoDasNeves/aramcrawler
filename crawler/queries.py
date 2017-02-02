@@ -1,4 +1,5 @@
 from crawler import database
+from crawler import schema
 # tasks are the top-level of this program
 # each api query type 
 
@@ -24,7 +25,23 @@ def getMatchDetail(matchId) # gets details of 1 ARAM
     # if queue is empty, put a getGames in the queue for each api key
     # - MatchDetails
     # - PlayerStats
+    logging.info("SQL is: "+sql)
     pass
+
+def doApiCall(endpoint, key):
+    #data = json.loads(data)
+    return {}
+
+def queryApi(endpoint, key):
+    data = doApiCall(endpoint,key)
+    for table in dataMap:
+        sql = ""
+        for field in table:
+            if endpoint in field:
+                fSig = field[endpoint]
+                fSig['d'] = data
+                sql.append(fSig.function(**fSig.args, **fSig.kwargs))
+
 
 # setup-tables tasks
 def setupTables():

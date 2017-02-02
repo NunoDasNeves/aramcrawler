@@ -1,11 +1,17 @@
 # recursive function for reading nested dictionary objects via an array
 # eg with d = {'a':{'b':1}}, d['a']['b'] can be read with rDBA(d,[a,b])
-def readDictByArray(d,a):
+def readDictByArray(d, a):
     if len(a) == 0:
         return None
     if len(a) == 1:
         return d[a[0]]
     return readDictByArray(d[a[0]], a[1:])
+
+class FuncSig:
+    def __init__(f, args, kwargs):
+        self.function = f
+        self.args = args
+        self.kwargs = kwargs
 
 dataMap = {
     'MatchDetails':
@@ -13,8 +19,23 @@ dataMap = {
         'matchId':
         {
             'type':'PRIMARY KEY BIGINT UNSIGNED',
-            'game-v1.3':(readDictByArray,["gameId"]),
-            'match-v2.2':(readDictByArray,["matchId"])
+            # function, *args, **kwargs
+            'game-v1.3':FuncSig(readDictByArray,[],{'a':['gameId']}),
+            'match-v2.2':FuncSig(readDictByArray,[],{'a':['matchId']})
+        }
+    }
+}
+
+
+dataMapFinal = {
+    'MatchDetails':
+    {
+        'matchId':
+        {
+            'type':'PRIMARY KEY BIGINT UNSIGNED',
+            # function, *args, **kwargs
+            'game-v1.3':FuncSig(readDictByArray,[['gameId']],{}),
+            'match-v2.2':FuncSig(readDictByArray,[['matchId']],{})
         },'
 
         mapId TINYINT UNSIGNED
@@ -40,8 +61,8 @@ dataMap = {
         {
             'type':'TINYINT UNSIGNED',
             'type':'PRIMARY KEY BIGINT UNSIGNED',
-            'game-v1.3':(lambda d,a:),
-            'match-v2.2':(firstField,["matchId"])
+            'game-v1.3':FuncSig(),
+            'match-v2.2':FuncSig()
 
         }
     },
