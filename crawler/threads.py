@@ -1,6 +1,6 @@
 import logging, time
 import threading, queue
-from crawler import database
+from crawler import database, tasks
 
 # TODO: implement a cache
 # from crawler import cache
@@ -9,7 +9,7 @@ VERSION = 0.1
 # 500 requests every 10 mins = 1 request per 1.2 seconds
 API_WAIT = 1.21
 # our queue of tasks to do
-tasks = queue.Queue
+taskList = queue.Queue
 # a special flag for killing our threads safely
 killFlag = False
 
@@ -17,11 +17,10 @@ def startThreads(keys, job):
     # put tasks in the queue
     if job == "crawl-games":
         logging.info("Starting ARAM crawler v{0}".format(VERSION))
-        tasks.put("game-v1.3")
-        tasks.put("game-v1.3")
     elif job == "get-static":
         logging.info("Getting static champions and items data")
-        pass
+        # TODO: remove, temporary only
+        taskList.put(tasks.getMatchDetail)
     else:
         return
 
@@ -38,6 +37,8 @@ def startThreads(keys, job):
     for t in threads:
         t.join()
 
+    logging.info("ARAM CRAWLER DYING")
+
 
 class ApiThread(threading.Thread):
     def __init__(self, apiKey):
@@ -53,8 +54,10 @@ class ApiThread(threading.Thread):
             startTime = time.time()
             # Here is where we do things
             # --------------------------
-            logging.info("Making one query")
-            time.sleep(0.8)
+            logging.info("In the thread making one query")
+            theTask = taskList.get()
+            theTask(self.apiKey)
+            taskList.task_done()
             # --------------------------
             waitPeriod = API_WAIT-(time.time()-startTime)
             if waitPeriod > 0:

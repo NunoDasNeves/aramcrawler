@@ -21,15 +21,12 @@ def getGames(summonerId): # returns 0-10 ARAMs, 5-40 summoners
     # - MatchDetails
     # - PlayerStats
     # - Summoners
-def getMatchDetail(apiKey):
-    """gets details of 1 ARAM"""
+def getMatchDetail(matchId, apiKey) # gets details of 1 ARAM
     ENDPOINT = 'match-v2.2'
     # get match details
     # if queue is empty, put a getGames in the queue for each api key
     # - MatchDetails
     # - PlayerStats
-    # get best matchId, use cache etc
-    matchId = 160652569
     data = queryApi(ENDPOINT, apiKeyi, matchId)
     processData(endpoint, data)
 

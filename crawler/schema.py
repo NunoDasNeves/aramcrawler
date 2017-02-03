@@ -13,7 +13,7 @@ class FuncSig:
         self.args = args
         self.kwargs = kwargs
 
-dataMap = {
+DATA_MAP = {
     'MatchDetails':
     {
         'matchId':
