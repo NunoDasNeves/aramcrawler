@@ -1,5 +1,6 @@
 import pymysql.cursors
 import config
+import logging
 
 # connect to mysql database
 def getConnection():
@@ -24,3 +25,7 @@ def setupTables(conn):
         cursor.execute(sql)
 
     conn.commit()
+
+def updateTable(sql):
+    logging.info("updating table!")
+    logging.info(str(sql))

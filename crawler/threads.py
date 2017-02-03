@@ -9,7 +9,7 @@ VERSION = 0.1
 # 500 requests every 10 mins = 1 request per 1.2 seconds
 API_WAIT = 1.21
 # our queue of tasks to do
-taskList = queue.Queue
+taskList = queue.Queue()
 # a special flag for killing our threads safely
 killFlag = False
 
@@ -19,7 +19,7 @@ def startThreads(keys, job):
         logging.info("Starting ARAM crawler v{0}".format(VERSION))
     elif job == "get-static":
         logging.info("Getting static champions and items data")
-        # TODO: remove, temporary only
+        # TODO: remove, testing only
         taskList.put(tasks.getMatchDetail)
     else:
         return
@@ -43,7 +43,7 @@ def startThreads(keys, job):
 class ApiThread(threading.Thread):
     def __init__(self, apiKey):
         threading.Thread.__init__(self)
-        self.key = apiKey
+        self.apiKey = apiKey
 
     def run(self):
         while True:

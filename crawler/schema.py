@@ -8,7 +8,7 @@ def readDictByArray(d, a):
     return readDictByArray(d[a[0]], a[1:])
 
 class FuncSig:
-    def __init__(f, args, kwargs):
+    def __init__(self, f, args, kwargs):
         self.function = f
         self.args = args
         self.kwargs = kwargs
@@ -20,13 +20,12 @@ DATA_MAP = {
         {
             'type':'PRIMARY KEY BIGINT UNSIGNED',
             # function, *args, **kwargs
-            'game-v1.3':FuncSig(readDictByArray,[],{'a':['gameId']}),
             'match-v2.2':FuncSig(readDictByArray,[],{'a':['matchId']})
         }
     }
 }
 
-
+"""
 dataMapFinal = {
     'MatchDetails':
     {
@@ -142,3 +141,4 @@ Items
 .
 '
 }
+"""
