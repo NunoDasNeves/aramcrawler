@@ -46,21 +46,34 @@ class ApiThread(threading.Thread):
         self.apiKey = apiKey
 
     def run(self):
+        logging.info("Thread {} starting".format(self.ident))
+        conn = None
         while True:
             if killFlag: break
-            # make sure we have an active mysql connection
-            #if not conn:
-            #    getMySqlConnection
             startTime = time.time()
-            # Here is where we do things
-            # --------------------------
-            logging.info("In the thread making one query")
-            theTask = taskList.get()
-            theTask(self.apiKey)
-            taskList.task_done()
-            # --------------------------
+            try:
+                # make sure we have an active mysql connection
+                if conn is None:
+                    logging.info("In the thread; no database connection, making one now")
+                    conn = database.getConnection()
+                # Here is where we do things
+                # --------------------------
+                if conn is not None:
+                    logging.info("In the thread making one query")
+                    theTask = taskList.get()
+                    taskList.task_done()
+                    theTask(self.apiKey, conn)
+                # --------------------------
+            except:
+
+                logging.error("Oh no! something went wrong. Getting next task...")
+
             waitPeriod = API_WAIT-(time.time()-startTime)
             if waitPeriod > 0:
                 logging.info("Waiting {0}".format(waitPeriod))
                 time.sleep(waitPeriod)
+
+        if cnn is not None:
+            conn.close()
+        logging.info("Thread {} dying".format(self.ident))
 
