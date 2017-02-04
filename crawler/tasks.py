@@ -17,6 +17,14 @@ def getItemData():
 # crawl-games tasks
 # start with 1 getGames task per api key
 def getGames(apiKey, conn): # returns 0-10 ARAMs, 5-40 summoners
+    """
+    Gets games from a summoner's history (not full game information)
+    Cache summoner names and matchIds for later queries
+    """
+    ENDPOINT = 'game-v1.3'
+    # TODO: get summonerId from cache>table>initial
+    summonerId = 404944
+    data = queryApi(ENDPOINT, apiKey, summonerId)
     # get games, put a getMatchDetail in the queue for each ARAM we got
     # if no arams, put another getGames in the queue for each api key
     pass
@@ -25,13 +33,13 @@ def getGames(apiKey, conn): # returns 0-10 ARAMs, 5-40 summoners
     # - Summoners
 
 def getMatchDetail(apiKey, conn):
-    """gets details of 1 ARAM"""
+    """Gets details of 1 ARAM"""
     ENDPOINT = 'match-v2.2'
     # get match details
     # if queue is empty, put a getGames in the queue for each api key
     # - MatchDetails
     # - PlayerStats
-    # TODO: use cache etc to get best matchId
+    # TODO: get matchId from cache>database>
     matchId = 160652569
     data = queryApi(ENDPOINT, apiKey, matchId)
     processData(ENDPOINT, data, "UPDATE", conn)

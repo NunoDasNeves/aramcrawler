@@ -1,6 +1,7 @@
 import logging, time
 import threading, queue
 from crawler import database, tasks
+import signal
 
 # TODO: implement a cache
 # from crawler import cache
@@ -8,17 +9,28 @@ from crawler import database, tasks
 VERSION = 0.1
 # 500 requests every 10 mins = 1 request per 1.2 seconds
 API_WAIT = 1.21
-# how many API_WAIT's to wait if there are no tasks to do
-TIMEOUT = 3
+# how many seconds to wait if there are no tasks to do
+TIMEOUT = 60
 # our queue of tasks to do
 taskList = queue.Queue()
 # a special flag for killing our threads safely
 killFlag = False
 
+def killThreads(signum, frame):
+    logging.info("SIGINT or SIGTERM detected, quitting...")
+    global killFlag
+    killFlag = True
+
 def startThreads(keys, job):
     # put tasks in the queue
     if job == "crawl-games":
         logging.info("Starting ARAM crawler v{0}".format(VERSION))
+        taskList.put(tasks.getMatchDetail)
+        taskList.put(tasks.getMatchDetail)
+        taskList.put(tasks.getMatchDetail)
+        taskList.put(tasks.getMatchDetail)
+        taskList.put(tasks.getMatchDetail)
+        taskList.put(tasks.getMatchDetail)
         taskList.put(tasks.getMatchDetail)
     elif job == "get-static":
         logging.info("Getting static champions and items data")
@@ -34,11 +46,14 @@ def startThreads(keys, job):
         t.start()
         threads.append(t)
 
+    # set up signal handlers
+    signal.signal(signal.SIGINT, killThreads)
+    signal.signal(signal.SIGTERM, killThreads)
+
     # block until threads are finished
     for t in threads:
         t.join()
-
-    logging.info("ARAM CRAWLER DYING")
+    logging.info("ARAM CRAWLER QUITTING")
 
 
 class ApiThread(threading.Thread):
@@ -51,7 +66,10 @@ class ApiThread(threading.Thread):
         conn = 1
         timeout = 0
         while True:
-            if killFlag: break
+            logging.info('[{}] killFlag: {}'.format(self.ident, killFlag))
+            if killFlag:
+                break
+            # get the current time so we can time our API calls
             startTime = time.time()
             # make sure we have an active mysql connection
             #if conn is None:
@@ -70,6 +88,7 @@ class ApiThread(threading.Thread):
                     logging.info("[{}] No tasks found after {} seconds".format(self.ident, TIMEOUT))
                     break
             # -------------------------- #
+            # wait the difference between the time we took to run and API_WAIT
             waitPeriod = API_WAIT-(time.time()-startTime)
             if waitPeriod > 0:
                 logging.info("[{}] Waiting {}".format(self.ident, waitPeriod))
