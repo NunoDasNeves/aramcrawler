@@ -3,9 +3,6 @@ import threading, queue
 from crawler import database, tasks
 import signal
 
-# TODO: implement a cache
-# from crawler import cache
-
 VERSION = 0.1
 # 500 requests every 10 mins = 1 request per 1.2 seconds
 API_WAIT = 1.21
@@ -45,6 +42,7 @@ def startThreads(keys, job):
         t.daemon = False
         t.start()
         threads.append(t)
+        tasks.NUM_THREADS += 1
 
     # set up signal handlers
     signal.signal(signal.SIGINT, killThreads)
@@ -67,8 +65,6 @@ class ApiThread(threading.Thread):
         timeout = 0
         while True:
             logging.info('[{}] killFlag: {}'.format(self.ident, killFlag))
-            if killFlag:
-                break
             # get the current time so we can time our API calls
             startTime = time.time()
             # make sure we have an active mysql connection
@@ -77,16 +73,22 @@ class ApiThread(threading.Thread):
             #    conn = database.getConnection()
             # Here is where we do things
             # -------------------------- #
-            if conn is not None:
-                try:
-                    logging.info("[{}] Checking task list".format(self.ident))
-                    theTask = taskList.get(block=True, timeout=TIMEOUT)
-                    taskList.task_done()
-                    logging.info("[{}] Starting task: {}".format(self.ident, str(theTask)))
-                    theTask(self.apiKey, conn)
-                except queue.Empty:
-                    logging.info("[{}] No tasks found after {} seconds".format(self.ident, TIMEOUT))
-                    break
+            try:
+                logging.info("[{}] Checking task list".format(self.ident))
+                theTask = taskList.get(block=True, timeout=TIMEOUT)
+                taskList.task_done()
+                # if the killFlag is set, only do getMatchDetails then finish
+                # this is because getMatchDetail will finish populating db rows
+                if killFlag and theTask != tasks.getMatchDetail:
+                    continue
+                logging.info("[{}] Starting task: {}".format(self.ident, str(theTask)))
+                # theTask will return an array of newTasks to add to the list
+                newTasks = theTask(self.apiKey, conn)
+                for t in newTasks:
+                    taskList.put(t)
+            except queue.Empty:
+                logging.info("[{}] No tasks found after {} seconds".format(self.ident, TIMEOUT))
+                break
             # -------------------------- #
             # wait the difference between the time we took to run and API_WAIT
             waitPeriod = API_WAIT-(time.time()-startTime)

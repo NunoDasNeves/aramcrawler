@@ -3,8 +3,22 @@ from crawler.schema.match import SCHEMA as CRAWLER_SCHEMA
 from crawler.schema.static import SCHEMA as STATIC_SCHEMA
 import config
 import logging
-# tasks are the top-level of this program
-# each api query type
+import queue
+
+# ------ CACHING ------
+# How many seconds we keep
+CACHE_TIMEOUT = 3600*24*1
+# queue for which matchId to query next! whee
+matchIds = queue.Queue()
+# We can throw away matchIds whos summoners we've already queried
+# matchid:{summonerid1,summonerid2,summonerid3}
+matchIdCache = {}
+# Summonerids, ordered by whether the summoner was in an ARAM
+summonerIds = queue.PriorityQueue()
+# We can throw away summonerIds once they're CACHE_TIMEOUT old (??)
+summonerIdCache = {}
+# ---------------------
+NUM_THREADS = 0
 
 # static-data tasks
 def getChampData():
@@ -23,31 +37,74 @@ def getGames(apiKey, conn): # returns 0-10 ARAMs, 5-40 summoners
     """
     ENDPOINT = 'game-v1.3'
     # TODO: get summonerId from cache>table>initial
-    summonerId = 404944
-    data = queryApi(ENDPOINT, apiKey, summonerId)
-    # get games, put a getMatchDetail in the queue for each ARAM we got
-    # if no arams, put another getGames in the queue for each api key
-    pass
-    # - MatchDetails
-    # - PlayerStats
-    # - Summoners
+    summonerId = summonerIds.get()
+    summonerIds.task_done()
+    # get the data from the API
+    data = queryApi(ENDPOINT apiKey, summonerId)
+    noNewArams = 0
+    noArams = 0
+    for game in data['games']:
+        if game['gameMode'] == 'ARAM':
+            noArams += 1
+            gameId = game['gameId']
+            matchIds.put(gameId)
+            queries = processData(ENDPOINT, game, "INSERT", CRAWLER_SCHEMA)
+            #database.updateTable(queries, conn)
+
+        # - MatchDetails
+        # - PlayerStats
+        # - Summoners
+
+    # If there are arams to query, add tasks for them!
+    if noArams > 0:
+        return [getMatchDetail]*noArams
+    # Otherwise, add getGames if we don't have enough matches left for our threads
+    diff = NUM_THREADS - matchIds.qsize()
+    if diff > 0:
+        return [getGames]*diff
+    return []
 
 def getMatchDetail(apiKey, conn):
-    """Gets details of 1 ARAM"""
+    """
+    Gets details of 1 ARAM
+    """
     ENDPOINT = 'match-v2.2'
     # get match details
     # if queue is empty, put a getGames in the queue for each api key
     # - MatchDetails
     # - PlayerStats
-    # TODO: get matchId from cache>database>
-    matchId = 160652569
+    # TODO: get matchId from cache>database>hardcoded
+     # CACHE CHECK. basically we need to check if the match has been queried already
+    # if game not in cache AND not in database, then we can query it
+    gameId = game['gameId']
+    if gameId in matchIdCache:
+        matchIdCache[gameId].insert(data['summonerId'])
+        # remove matchId from cache if all summoners in that game have been queried
+        if len(matchIdCache[gameId]) == 10:
+            del matchIdCache[gameId]
+        continue
+    # if the match hasn't been populated yet, there will be no participants
+    rows = database.getRows('Participants', gameId):
+    if len(rows) > 0:
+        continue
+    # so if the match doesn't exist, we're gonna put it in our queue of matches to query
     data = queryApi(ENDPOINT, apiKey, matchId)
-    processData(ENDPOINT, data, "UPDATE", conn)
+    queries = processData(ENDPOINT, data, "UPDATE", CRAWLER_SCHEMA)
+    #database.updateTable(queries, conn)
 
-def processData(endpoint, data, sqlCommand, conn):
+    # add getGames if we don't have enough matches left for our threads
+    diff = NUM_THREADS - matchIds.qsize()
+    if diff > 0:
+        return [getGames]*diff
+    return []
+
+def processData(endpoint, data, sqlCommand, schema):
+    """
+    Maps an api response to an array of SQL database queries
+    """
     queries = []
     # make a new sql query for each table
-    for tableName, fields in CRAWLER_SCHEMA.items():
+    for tableName, fields in schema.items():
         #logging.info("doing table: " + tableName)
         # check each field to see if there's a function mapped to this endpoint
         rows = []
@@ -63,7 +120,7 @@ def processData(endpoint, data, sqlCommand, conn):
         sql = sqlCommand+" `"+tableName+"` (`"+'`,`'.join(rows)+'`) VALUES ('+','.join(values)+')'
         queries.append(sql)
     logging.info(queries)
-    #database.updateTable(queries, conn)
+    return queries
 
 def queryApi(endpoint, key, params):
     import urllib.request, json

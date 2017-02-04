@@ -22,6 +22,7 @@ SCHEMA = {
         {
             'type':'INT UNSIGNED'
         },
+        """
         'matchMode':
         {
             'type':'VARCHAR(24)',
@@ -32,6 +33,7 @@ SCHEMA = {
             'type':'VARCHAR(24)',
             'require':'MATCHED_GAME'
         },
+        """
         'matchVersion':
         {
             'type':'VARCHAR(24)'
@@ -40,11 +42,13 @@ SCHEMA = {
         {
             'type':'VARCHAR(8)'
         },
+        """
         'queueType':
         {
             'type':'VARCHAR(24)',
             'require':'ARAM_5x5'
         },
+        """
         'region':
         {
             'type':'VARCHAR(4)'
