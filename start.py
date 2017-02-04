@@ -43,7 +43,7 @@ def startCrawler():
         context.open()
         # initialize logging to file
         logging.basicConfig(
-                filename=logFile, 
+                filename=logFile,
                 format="%(asctime)s %(levelname)s %(message)s", 
                 level=logging.INFO
             )

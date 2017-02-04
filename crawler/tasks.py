@@ -1,9 +1,10 @@
 from crawler import database
-from crawler.schema import DATA_MAP
+from crawler.schema.match import SCHEMA as CRAWLER_SCHEMA
+from crawler.schema.static import SCHEMA as STATIC_SCHEMA
 import config
 import logging
 # tasks are the top-level of this program
-# each api query type 
+# each api query type
 
 # static-data tasks
 def getChampData():
@@ -35,12 +36,13 @@ def getMatchDetail(apiKey, conn):
     data = queryApi(ENDPOINT, apiKey, matchId)
     processData(ENDPOINT, data, "UPDATE", conn)
 
-def processData(endpoint, data, sqlCommand):
+def processData(endpoint, data, sqlCommand, conn):
     queries = []
     # make a new sql query for each table
-    for tableName, fields in DATA_MAP.items():
+    for tableName, fields in CRAWLER_SCHEMA.items():
         #logging.info("doing table: " + tableName)
         # check each field to see if there's a function mapped to this endpoint
+        rows = []
         values = []
         for fieldName, field in fields.items():
             #logging.info("   doing field: " + fieldName)
@@ -48,12 +50,12 @@ def processData(endpoint, data, sqlCommand):
                 # execute said function, giving it the api data
                 fSig = field[endpoint]
                 fSig.kwargs['d'] = data
-                values.append(str(fSig.function(*fSig.args, **fSig.kwargs)))
-        # TODO: look at different SQL queries; not just replace
-        sql = sqlCommand+" `"+tableName+"` (`"+'`,`'.join(fields.keys())+'`) VALUES ('+','.join(values)+')'
+                values.append(str(fSig.function(**fSig.kwargs)))
+                rows.append(fieldName)
+        sql = sqlCommand+" `"+tableName+"` (`"+'`,`'.join(rows)+'`) VALUES ('+','.join(values)+')'
         queries.append(sql)
-
-    database.updateTable(queries, conn)
+    logging.info(queries)
+    #database.updateTable(queries, conn)
 
 def queryApi(endpoint, key, params):
     import urllib.request, json
@@ -63,6 +65,7 @@ def queryApi(endpoint, key, params):
     url = config.apiUrl+ext+'?api_key='+key
     logging.info("Querying: "+url)
     data = json.loads(urllib.request.urlopen(url, None).read())
+    logging.info("Got data!")
     #logging.info("**************** data ****************\n"+str(data)+"\n***************************")
     return data
 
