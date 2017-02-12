@@ -4,9 +4,10 @@ from crawler.schema.static import SCHEMA as STATIC_SCHEMA
 import config
 import logging
 import queue
+import urllib.request, json
 
 # ------ CACHING ------
-# How many seconds we keep
+# How many seconds we keep stuff
 CACHE_TIMEOUT = 3600*24*1
 # queue for which matchId to query next! whee
 matchIds = queue.Queue()
@@ -28,8 +29,6 @@ def getItemData():
     # - Items
     pass
 
-# crawl-games tasks
-# start with 1 getGames task per api key
 def getGames(apiKey, conn): # returns 0-10 ARAMs, 5-40 summoners
     """
     Gets games from a summoner's history (not full game information)
@@ -40,7 +39,7 @@ def getGames(apiKey, conn): # returns 0-10 ARAMs, 5-40 summoners
     summonerId = summonerIds.get()
     summonerIds.task_done()
     # get the data from the API
-    data = queryApi(ENDPOINT apiKey, summonerId)
+    data = queryApi(ENDPOINT, apiKey, summonerId)
     noNewArams = 0
     noArams = 0
     for game in data['games']:
@@ -65,9 +64,7 @@ def getGames(apiKey, conn): # returns 0-10 ARAMs, 5-40 summoners
     return []
 
 def getMatchDetail(apiKey, conn):
-    """
-    Gets details of 1 ARAM
-    """
+    """ Gets details of 1 ARAM """
     ENDPOINT = 'match-v2.2'
     # get match details
     # if queue is empty, put a getGames in the queue for each api key
@@ -82,11 +79,10 @@ def getMatchDetail(apiKey, conn):
         # remove matchId from cache if all summoners in that game have been queried
         if len(matchIdCache[gameId]) == 10:
             del matchIdCache[gameId]
-        continue
     # if the match hasn't been populated yet, there will be no participants
-    rows = database.getRows('Participants', gameId):
+    rows = database.getRows('Participants', gameId)
     if len(rows) > 0:
-        continue
+        pass
     # so if the match doesn't exist, we're gonna put it in our queue of matches to query
     data = queryApi(ENDPOINT, apiKey, matchId)
     queries = processData(ENDPOINT, data, "UPDATE", CRAWLER_SCHEMA)
@@ -99,9 +95,7 @@ def getMatchDetail(apiKey, conn):
     return []
 
 def processData(endpoint, data, sqlCommand, schema):
-    """
-    Maps an api response to an array of SQL database queries
-    """
+    """ Maps an api response to an array of SQL database queries """
     queries = []
     # make a new sql query for each table
     for tableName, fields in schema.items():
@@ -123,12 +117,14 @@ def processData(endpoint, data, sqlCommand, schema):
     return queries
 
 def queryApi(endpoint, key, params):
-    import urllib.request, json
+    """ Queries the remote API and returns a dict with the data """
+    # first create the right url
     prts = endpoint.split('-')
     # match-v2.2, params -> v2.2/match/params
     ext = '/'.join([prts[1],prts[0],str(params)])
     url = config.apiUrl+ext+'?api_key='+key
     logging.info("Querying: "+url)
+    # do the query, convery from json to dict
     data = json.loads(urllib.request.urlopen(url, None).read())
     logging.info("Got data!")
     #logging.info("**************** data ****************\n"+str(data)+"\n***************************")

@@ -23,12 +23,6 @@ def startThreads(keys, job):
     if job == "crawl-games":
         logging.info("Starting ARAM crawler v{0}".format(VERSION))
         taskList.put(tasks.getMatchDetail)
-        taskList.put(tasks.getMatchDetail)
-        taskList.put(tasks.getMatchDetail)
-        taskList.put(tasks.getMatchDetail)
-        taskList.put(tasks.getMatchDetail)
-        taskList.put(tasks.getMatchDetail)
-        taskList.put(tasks.getMatchDetail)
     elif job == "get-static":
         logging.info("Getting static champions and items data")
     else:
@@ -61,18 +55,14 @@ class ApiThread(threading.Thread):
 
     def run(self):
         logging.info("[{}] Starting".format(self.ident))
-        conn = 1
+        conn = database.getConnection()
         timeout = 0
         while True:
             logging.info('[{}] killFlag: {}'.format(self.ident, killFlag))
             # get the current time so we can time our API calls
             startTime = time.time()
-            # make sure we have an active mysql connection
-            #if conn is None:
-            #    logging.info("In the thread; no database connection, making one now")
-            #    conn = database.getConnection()
-            # Here is where we do things
-            # -------------------------- #
+
+            # get and execute the next task
             try:
                 logging.info("[{}] Checking task list".format(self.ident))
                 theTask = taskList.get(block=True, timeout=TIMEOUT)
@@ -89,14 +79,13 @@ class ApiThread(threading.Thread):
             except queue.Empty:
                 logging.info("[{}] No tasks found after {} seconds".format(self.ident, TIMEOUT))
                 break
-            # -------------------------- #
+
             # wait the difference between the time we took to run and API_WAIT
             waitPeriod = API_WAIT-(time.time()-startTime)
             if waitPeriod > 0:
                 logging.info("[{}] Waiting {}".format(self.ident, waitPeriod))
                 time.sleep(waitPeriod)
 
-        #if conn is not None:
-        #    conn.close()
+        conn.close()
         logging.info("[{}] Dying".format(self.ident))
 

@@ -3,12 +3,18 @@ from crawler.schema.common import *
 SCHEMA = {
         'Champions': {
             'championId' : {
-                'type': 'PRIMARY KEY TINYINT UNSIGNED'
+                'type': 'TINYINT UNSIGNED PRIMARY KEY'
             },
             'name': {
-                'type': 'KEY VARCHAR(64)'
+                'type': 'VARCHAR(64)'
             }
         },
         'Items': {
+            'itemId' : {
+                'type': 'INT UNSIGNED PRIMARY KEY'
+            },
+            'name' : {
+                'type': 'VARCHAR(128)'
+            }
         }
 }

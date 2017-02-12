@@ -5,7 +5,7 @@ SCHEMA = {
     {
         'matchId':
         {
-            'type':'PRIMARY KEY BIGINT UNSIGNED',
+            'type':'BIGINT UNSIGNED PRIMARY KEY',
             # function, *args, **kwargs
             GAME:FuncSig(readDictByArray,{'a':['gameId']}),
             MATCH:FuncSig(readDictByArray,{'a':['matchId']})
@@ -22,7 +22,6 @@ SCHEMA = {
         {
             'type':'INT UNSIGNED'
         },
-        """
         'matchMode':
         {
             'type':'VARCHAR(24)',
@@ -33,7 +32,6 @@ SCHEMA = {
             'type':'VARCHAR(24)',
             'require':'MATCHED_GAME'
         },
-        """
         'matchVersion':
         {
             'type':'VARCHAR(24)'
@@ -42,13 +40,11 @@ SCHEMA = {
         {
             'type':'VARCHAR(8)'
         },
-        """
         'queueType':
         {
             'type':'VARCHAR(24)',
             'require':'ARAM_5x5'
         },
-        """
         'region':
         {
             'type':'VARCHAR(4)'
@@ -97,19 +93,19 @@ SCHEMA = {
     {
         'id':
         {
-            'type':'PRIMARY KEY BIGINT UNSIGNED'
+            'type':'BIGINT UNSIGNED PRIMARY KEY'
         },
         'matchId':
         {
-            'type':'KEY BIGINT UNSIGNED'
+            'type':'BIGINT UNSIGNED'
         },
         'participantId':
         {
-            'type':'KEY TINYINT UNSIGNED'
+            'type':'TINYINT UNSIGNED'
         },
         'summonerId':
         {
-            'type':'KEY BIGINT UNSIGNED'
+            'type':'BIGINT UNSIGNED'
         },
         'championId':
         {
@@ -324,7 +320,7 @@ SCHEMA = {
     {
         'summonerId':
         {
-            'type':'PRIMARY KEY BIGINT UNSIGNED'
+            'type':'BIGINT UNSIGNED PRIMARY KEY'
         },
         'name':
         {

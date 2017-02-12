@@ -2,8 +2,8 @@ import pymysql.cursors
 import config
 import logging
 
-# connect to mysql database
 def getConnection():
+    """ Connect to the mysql database with the details in config.py and return the connection object """
     logging.info("Opening a connection to mysql database at {0}".format(config.dbHost))
     try:
         return pymysql.connect(
@@ -17,10 +17,24 @@ def getConnection():
         logging.error("Could not connect to database!")
         return None
 
-def setupTables(sql, conn):
+def setupTables(conn):
+    """ Setup tables """
+    from crawler.schema.match import SCHEMA as CRAWLER_SCHEMA
+    from crawler.schema.static import SCHEMA as STATIC_SCHEMA
+    bigDict = STATIC_SCHEMA.copy()
+    bigDict.update(CRAWLER_SCHEMA)
+    queries = []
+    for tableName, tableData in bigDict.items():
+        queries.append("DROP TABLE IF EXISTS {}".format(tableName))
+        rows=[]
+        for rowName, rowData in tableData.items():
+            rows.append(rowName+" "+rowData['type'])
+        queries.append("CREATE TABLE {} ({})".format(tableName, ', '.join(rows)))
     # execute it
     with conn.cursor() as cursor:
-        cursor.execute(sql)
+        for q in queries:
+            print ('    '+q)
+            cursor.execute(q)
 
     conn.commit()
 
