@@ -1,6 +1,7 @@
 from crawler import database
 from crawler.schema.match import SCHEMA as CRAWLER_SCHEMA
 from crawler.schema.static import SCHEMA as STATIC_SCHEMA
+from crawler.schema.common import GAME, MATCH
 import config
 import logging
 import queue
@@ -34,7 +35,7 @@ def getGames(apiKey, conn): # returns 0-10 ARAMs, 5-40 summoners
     Gets games from a summoner's history (not full game information)
     Cache summoner names and matchIds for later queries
     """
-    ENDPOINT = 'game-v1.3'
+    ENDPOINT = GAME
     # TODO: get summonerId from cache>table>initial
     summonerId = summonerIds.get()
     summonerIds.task_done()
@@ -42,17 +43,20 @@ def getGames(apiKey, conn): # returns 0-10 ARAMs, 5-40 summoners
     data = queryApi(ENDPOINT, apiKey, summonerId)
     noNewArams = 0
     noArams = 0
+    queries = []
     for game in data['games']:
         if game['gameMode'] == 'ARAM':
             noArams += 1
+            # TODO: check if it's a new aram or one we already got!
             gameId = game['gameId']
             matchIds.put(gameId)
-            queries = processData(ENDPOINT, game, "INSERT", CRAWLER_SCHEMA)
+            queries += processData(ENDPOINT, game, "INSERT", CRAWLER_SCHEMA["MatchDetails"], "MatchDetails")
             #database.updateTable(queries, conn)
-
-        # - MatchDetails
-        # - PlayerStats
-        # - Summoners
+        for player in game["fellowPlayers"]:
+            queries += processData(ENDPOINT, player, "REPLACE", CRAWLER_SCHEMA["MatchDetails"], "MatchDetails")
+            # TODO: do something with summonerIds, caching and whatever
+ 
+    # update MatchDetails and Summoners
 
     # If there are arams to query, add tasks for them!
     if noArams > 0:
@@ -65,7 +69,7 @@ def getGames(apiKey, conn): # returns 0-10 ARAMs, 5-40 summoners
 
 def getMatchDetail(apiKey, conn):
     """ Gets details of 1 ARAM """
-    ENDPOINT = 'match-v2.2'
+    ENDPOINT = MATCH
     # get match details
     # if queue is empty, put a getGames in the queue for each api key
     # - MatchDetails
@@ -94,25 +98,22 @@ def getMatchDetail(apiKey, conn):
         return [getGames]*diff
     return []
 
-def processData(endpoint, data, sqlCommand, schema):
+def processData(endpoint, data, sqlCommand, tableSchema, tableName):
     """ Maps an api response to an array of SQL database queries """
     queries = []
     # make a new sql query for each table
-    for tableName, fields in schema.items():
-        #logging.info("doing table: " + tableName)
-        # check each field to see if there's a function mapped to this endpoint
-        rows = []
-        values = []
-        for fieldName, field in fields.items():
-            #logging.info("   doing field: " + fieldName)
-            if endpoint in field.keys():
-                # execute said function, giving it the api data
-                fSig = field[endpoint]
-                fSig.kwargs['d'] = data
-                values.append(str(fSig.function(**fSig.kwargs)))
-                rows.append(fieldName)
-        sql = sqlCommand+" `"+tableName+"` (`"+'`,`'.join(rows)+'`) VALUES ('+','.join(values)+')'
-        queries.append(sql)
+    rows = []
+    values = []
+    for fieldName, field in tableSchem.items():
+        #logging.info("   doing field: " + fieldName)
+        if endpoint in field.keys():
+            # execute said function, giving it the api data
+            fSig = field[endpoint]
+            fSig.kwargs['d'] = data
+            values.append(str(fSig.function(**fSig.kwargs)))
+            rows.append(fieldName)
+    sql = sqlCommand+" `"+tableName+"` (`"+'`,`'.join(rows)+'`) VALUES ('+','.join(values)+')'
+    queries.append(sql)
     logging.info(queries)
     return queries
 
